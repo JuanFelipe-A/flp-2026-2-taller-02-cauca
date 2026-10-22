@@ -19,10 +19,8 @@ parte del grupo.
 
 | Nombre completo | Código | Correo institucional |
 |---|---|---|
-| | | |
-| | | |
-| | | |
-| | | |
+| Juan Felipe Aristizabal | 2459364-3743 | juan.felipe.aristizabal@correounivalle.edu.co |
+| Juan Sebastian Huertas | 2459505-3743 | huertas.juan@correounivalle.edu.co |
 
 ## Cómo se entrega
 
