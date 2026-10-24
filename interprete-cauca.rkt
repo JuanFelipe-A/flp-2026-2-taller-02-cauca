@@ -49,7 +49,24 @@
     (interpretar "...")   =>
 
   Primitivas nuevas
-    (interpretar "...")   =>
+    (interpretar "abs(-7)")               => 7
+    (interpretar "abs(-3.5)")             => 3.5
+    (interpretar "mcd(12, 18)")           => 6
+    (interpretar "mcd(12, 18, 24)")       => 6
+    (interpretar "mcd(1.5, 2)")           => error (argumento no entero)
+    (interpretar "mcm(4, 6)")             => 12
+    (interpretar "mcm(2, 3, 4)")          => 12
+    (interpretar "mcm(4)")                => error (mínimo 2 argumentos)
+    (interpretar "promedio(1, 2, 3, 4)")  => 5/2
+    (interpretar "promedio(10)")          => 10
+    (interpretar "xor(true, false)")      => #t
+    (interpretar "xor(true, true)")       => #f
+    (interpretar "xor(1, true)")          => error (argumento no booleano)
+    (interpretar "implica(true, false)")  => #f
+    (interpretar "implica(false, false)") => #t
+    (interpretar "entre(5, 1, 10)")       => #t
+    (interpretar "entre(11, 1, 10)")      => #f
+    (interpretar "entre(1, 2)")           => error (cantidad de argumentos)
 
   Procedimientos
     (interpretar "...")   =>

@@ -87,6 +87,35 @@
     (and (exigir-cantidad args 2 quien)
          (exigir-numeros args quien)
          (op (car args) (cadr args)))))
+;; mcd-lista : lista de enteros -> entero
+;; Propósito: máximo común divisor de dos o más enteros.
+(define mcd-lista
+  (lambda (xs) (plegar gcd (car xs) (cdr xs))))
+
+;; mcm-lista : lista de enteros -> entero
+;; Propósito: mínimo común múltiplo de dos o más enteros.
+(define mcm-lista
+  (lambda (xs) (plegar lcm (car xs) (cdr xs))))
+
+;; promedio-lista : lista de números -> número
+;; Propósito: media aritmética de uno o más números.
+(define promedio-lista
+  (lambda (xs) (/ (apply + xs) (length xs))))
+
+;; xor-bool : booleano x booleano -> booleano
+;; Propósito: verdadero cuando exactamente uno de los dos lo es.
+(define xor-bool
+  (lambda (a b) (not (eq? a b))))
+
+;; implica-bool : booleano x booleano -> booleano
+;; Propósito: falso solo cuando a es verdadero y b es falso.
+(define implica-bool
+  (lambda (a b) (or (not a) b)))
+
+;; entre-num : número x número x número -> booleano
+;; Propósito: verdadero cuando a <= x <= b.
+(define entre-num
+  (lambda (x a b) (and (<= a x) (<= x b))))
 
 ;; evaluar-primitiva : primitiva x lista de valores -> valor
 ;; Verifica la cantidad y el tipo de los argumentos y aplica la
@@ -122,6 +151,41 @@
       (or-prim ()
         (and (exigir-cantidad args 2 'or)
              (exigir-booleanos args 'or)
-             (or (car args) (cadr args)))))))
+             (or (car args) (cadr args))))
+
+      (abs-prim ()
+        (and (exigir-cantidad args 1 'abs)
+             (exigir-numeros args 'abs)
+             (abs (car args))))
+
+      (mcd-prim ()
+        (and (exigir-enteros args 'mcd)
+             (exigir-minimo args 2 'mcd)
+             (mcd-lista args)))
+
+      (mcm-prim ()
+        (and (exigir-enteros args 'mcm)
+             (exigir-minimo args 2 'mcm)
+             (mcm-lista args)))
+
+      (promedio-prim ()
+        (and (exigir-numeros args 'promedio)
+             (exigir-minimo args 1 'promedio)
+             (promedio-lista args)))
+
+      (xor-prim ()
+        (and (exigir-cantidad args 2 'xor)
+             (exigir-booleanos args 'xor)
+             (xor-bool (car args) (cadr args))))
+
+      (implica-prim ()
+        (and (exigir-cantidad args 2 'implica)
+             (exigir-booleanos args 'implica)
+             (implica-bool (car args) (cadr args))))
+
+      (entre-prim ()
+        (and (exigir-cantidad args 3 'entre)
+             (exigir-numeros args 'entre)
+             (entre-num (car args) (cadr args) (caddr args)))))))
 
 (provide (all-defined-out))
