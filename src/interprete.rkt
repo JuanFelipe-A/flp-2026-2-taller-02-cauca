@@ -76,6 +76,9 @@
         (let ((proc (evaluar-expresion rator env)))
           (if (procval? proc)
               (apply-procedure proc (evaluar-rands rands env))
-              (eopl:error 'app-exp "~s no es un procedimiento" proc)))))))
+              (eopl:error 'app-exp "~s no es un procedimiento" proc))))
+      (letrec-exp (proc-names idss bodies letrec-body)
+        (evaluar-expresion letrec-body
+                           (ambiente-recursivo proc-names idss bodies env))))))
 
 (provide (all-defined-out))

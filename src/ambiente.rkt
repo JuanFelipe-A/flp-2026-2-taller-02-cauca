@@ -31,6 +31,11 @@
   (ambiente-extendido
    (ids (list-of symbol?))
    (valores list?)
+   (env ambiente?))
+  (ambiente-recursivo
+   (proc-names (list-of symbol?))
+   (idss list?)
+   (bodies (list-of expresion?))
    (env ambiente?)))
 
 ;; posicion : symbol x lista de symbol x int -> int o #f
@@ -44,6 +49,7 @@
 ;; apply-env : ambiente x symbol -> valor
 ;; Busca el identificador en el ambiente, respetando el shadowing de las
 ;; ligaduras más recientes, y levanta eopl:error si no está ligado.
+;; En un ambiente-recursivo arma la cerradura con el mismo ambiente.
 (define apply-env
   (lambda (env id)
     (cases ambiente env
@@ -53,6 +59,11 @@
         (let ((pos (posicion id ids 0)))
           (if pos
               (list-ref valores pos)
+              (apply-env env-externo id))))
+      (ambiente-recursivo (proc-names idss bodies env-externo)
+        (let ((pos (posicion id proc-names 0)))
+          (if pos
+              (cerradura (list-ref idss pos) (list-ref bodies pos) env)
               (apply-env env-externo id)))))))
 
 ;; ambiente-inicial : -> ambiente

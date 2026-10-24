@@ -47,6 +47,8 @@
     (expresion ("let" (arbno identificador "=" expresion) "in" expresion "end") let-exp)
     (expresion ("proc" "(" (separated-list identificador ",") ")" expresion "end") proc-exp)
     (expresion ("apply" expresion "(" (separated-list expresion ",") ")") app-exp)
+    (expresion ("letrec" (arbno identificador "(" (separated-list identificador ",") ")" "=" expresion)
+                "in" expresion "end") letrec-exp)
 
     (primitiva ("+") sum-prim)
     (primitiva ("-") minus-prim)
