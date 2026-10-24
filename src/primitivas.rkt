@@ -22,8 +22,7 @@
           (else (eopl:error quien "se esperaba un numero y llego ~s" (car args))))))
 
 ;; exigir-enteros : lista x symbol -> boolean
-;; Retorna #t si todos los argumentos son enteros exactos; si no,
-;; levanta error.
+;; Retorna #t si todos los argumentos son enteros; si no, levanta error.
 (define exigir-enteros
   (lambda (args quien)
     (cond ((null? args) #t)
@@ -56,9 +55,7 @@
         (eopl:error quien "espera al menos ~s argumento(s) y recibio ~s" n (length args)))))
 
 ;; aritmetica : lista x (num x num -> num) x symbol -> num
-;; Aplica una operación aritmética n-aria de izquierda a derecha
-;; después de verificar que haya al menos un argumento y que todos
-;; sean números.
+;; Verifica los argumentos y aplica op de izquierda a derecha.
 (define aritmetica
   (lambda (args op quien)
     (and (exigir-minimo args 1 quien)
@@ -68,7 +65,7 @@
              (plegar op (car args) (cdr args))))))
 
 ;; plegar : (num x num -> num) x num x lista de num -> num
-;; Acumula op de izquierda a derecha: ((acc op x1) op x2) ...
+;; Va aplicando op entre el acumulado y cada elemento.
 (define plegar
   (lambda (op acc resto)
     (if (null? resto)
@@ -76,7 +73,7 @@
         (plegar op (op acc (car resto)) (cdr resto)))))
 
 ;; dividir : num x num -> num
-;; División que levanta eopl:error cuando el divisor es cero.
+;; Divide a entre b, con error si b es cero.
 (define dividir
   (lambda (a b)
     (if (zero? b)
@@ -84,7 +81,7 @@
         (/ a b))))
 
 ;; relacional : lista x (num x num -> bool) x symbol -> bool
-;; Verifica dos argumentos numéricos y los compara.
+;; Compara dos numeros con op.
 (define relacional
   (lambda (args op quien)
     (and (exigir-cantidad args 2 quien)

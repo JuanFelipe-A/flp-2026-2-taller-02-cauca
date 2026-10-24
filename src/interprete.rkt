@@ -20,7 +20,13 @@
 ;; ligaduras de los parámetros, no en el ambiente de la llamada.
 (define apply-procedure
   (lambda (proc args)
-    (eopl:error 'apply-procedure "Sin implementar")))
+    (cases procval proc
+      (cerradura (ids body env)
+        (if (= (length ids) (length args))
+            (evaluar-expresion body (ambiente-extendido ids args env))
+            (eopl:error 'apply-procedure
+                        "el procedimiento espera ~s argumento(s) y recibio ~s"
+                        (length ids) (length args)))))))
 
 ;; evaluar-programa : programa -> valor
 ;; Punto de entrada: evalúa la expresión del programa en el ambiente
@@ -63,6 +69,13 @@
               (eopl:error 'if-exp "la condicion debe ser booleana y llego ~s" test-value))))
       (let-exp (ids rands body)
         (let ((valores (evaluar-rands rands env)))
-          (evaluar-expresion body (ambiente-extendido ids valores env)))))))
+          (evaluar-expresion body (ambiente-extendido ids valores env))))
+      (proc-exp (ids body)
+        (cerradura ids body env))
+      (app-exp (rator rands)
+        (let ((proc (evaluar-expresion rator env)))
+          (if (procval? proc)
+              (apply-procedure proc (evaluar-rands rands env))
+              (eopl:error 'app-exp "~s no es un procedimiento" proc)))))))
 
 (provide (all-defined-out))

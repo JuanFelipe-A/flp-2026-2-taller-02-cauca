@@ -45,6 +45,8 @@
     (expresion (primitiva "(" (separated-list expresion ",") ")") prim-exp)
     (expresion ("if" expresion "then" expresion "else" expresion "end") if-exp)
     (expresion ("let" (arbno identificador "=" expresion) "in" expresion "end") let-exp)
+    (expresion ("proc" "(" (separated-list identificador ",") ")" expresion "end") proc-exp)
+    (expresion ("apply" expresion "(" (separated-list expresion ",") ")") app-exp)
 
     (primitiva ("+") sum-prim)
     (primitiva ("-") minus-prim)

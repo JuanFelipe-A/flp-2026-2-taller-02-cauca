@@ -34,8 +34,7 @@
    (env ambiente?)))
 
 ;; posicion : symbol x lista de symbol x int -> int o #f
-;; Retorna la posición de id en la lista ids, contando desde i,
-;; o #f si no aparece.
+;; Da la posicion de id en ids, o #f si no esta.
 (define posicion
   (lambda (id ids i)
     (cond ((null? ids) #f)
@@ -43,9 +42,8 @@
           (else (posicion id (cdr ids) (+ i 1))))))
 
 ;; apply-env : ambiente x symbol -> valor
-;; Busca el identificador desde la ligadura más reciente hacia afuera,
-;; de modo que la más interna oculta a las externas (shadowing).
-;; Levanta eopl:error si llega al ambiente vacío sin encontrarlo.
+;; Busca el identificador en el ambiente, respetando el shadowing de las
+;; ligaduras más recientes, y levanta eopl:error si no está ligado.
 (define apply-env
   (lambda (env id)
     (cases ambiente env
