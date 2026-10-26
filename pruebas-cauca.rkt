@@ -1,5 +1,5 @@
 #lang eopl
-;Autores: Nombre1 Codigo1, Nombre2 Codigo2
+;Autores: Juan Felipe Aristizabal 2459364-3743, Juan Sebastian Huertas 2459505-3743
 
 ;; Taller 2 — El intérprete de Cauca.
 ;; Batería de pruebas con rackunit. Llega escrita en el fork y no se
@@ -203,13 +203,137 @@ in case dia of 1 => 100 of 3 => 300 otherwise => 0 end end") 0))
               (check-exn exn:fail?
                          (lambda () (corre "case true of 1 => 1 otherwise => 0 end"))))))
 
+;; ---------------------------------------------------------------
+;; Pruebas del grupo
+;; ---------------------------------------------------------------
+
+;; lexemas : string -> lista
+;; Deja de cada token solo su contenido (texto, simbolo o numero),
+;; porque el nombre literal-stringN que pone SLLGEN puede cambiar.
+(define lexemas
+  (lambda (texto)
+    (map cadr (scanner texto))))
+
+;; clase : string -> symbol
+;; Clase del primer token del texto: identificador, numero, etc.
+(define clase
+  (lambda (texto)
+    (car (car (scanner texto)))))
+
+(define grupo-scanner
+  (test-suite
+   "Grupo: scanner"
+   (test-case "palabras reservadas, signos e identificadores"
+              (check-equal? (lexemas "add1(n)") '("add1" "(" n ")"))
+              (check-equal? (lexemas "let x = 2 in x end")
+                            '("let" x "=" 2 "in" x "end")))
+   (test-case "numeros enteros, flotantes y negativos"
+              (check-equal? (lexemas "42 -7 3.5 -0.25") '(42 -7 3.5 -0.25))
+              (check-equal? (clase "-7") 'numero))
+   (test-case "identificadores con guion bajo y signo de interrogacion"
+              (check-equal? (lexemas "es_par? x1 a_b_c") '(es_par? x1 a_b_c))
+              (check-equal? (clase "es_par?") 'identificador))
+   (test-case "el guion no hace parte de un identificador"
+              (check-equal? (lexemas "-(n, 1)") '("-" "(" n "," 1 ")")))
+   (test-case "comentarios y espacios se descartan"
+              (check-equal? (lexemas "// comentario\n  7  // otro") '(7))
+              (check-equal? (lexemas "") '()))))
+
+(define grupo-parser
+  (test-suite
+   "Grupo: parser"
+   (test-case "literales, variables y booleanos"
+              (check-equal? (parser "42") (a-program (lit-exp 42)))
+              (check-equal? (parser "-7") (a-program (lit-exp -7)))
+              (check-equal? (parser "x") (a-program (var-exp 'x)))
+              (check-equal? (parser "true") (a-program (true-exp))))
+   (test-case "primitiva: la resta no se confunde con un negativo"
+              (check-equal? (parser "-(10, 3)")
+                            (a-program (prim-exp (minus-prim)
+                                                 (list (lit-exp 10) (lit-exp 3))))))
+   (test-case "if y let"
+              (check-equal? (parser "if true then 1 else 2 end")
+                            (a-program (if-exp (true-exp) (lit-exp 1) (lit-exp 2))))
+              (check-equal? (parser "let x = 2 y = 3 in x end")
+                            (a-program (let-exp '(x y)
+                                                (list (lit-exp 2) (lit-exp 3))
+                                                (var-exp 'x)))))
+   (test-case "proc y apply"
+              (check-equal? (parser "proc (a, b) a end")
+                            (a-program (proc-exp '(a b) (var-exp 'a))))
+              (check-equal? (parser "apply f (1, true)")
+                            (a-program (app-exp (var-exp 'f)
+                                                (list (lit-exp 1) (true-exp))))))
+   (test-case "letrec"
+              (check-equal? (parser "letrec f (k) = k in apply f (1) end")
+                            (a-program (letrec-exp '(f) '((k)) (list (var-exp 'k))
+                                                   (app-exp (var-exp 'f)
+                                                            (list (lit-exp 1)))))))
+   (test-case "errores de sintaxis"
+              (check-exn exn:fail? (lambda () (parser "if true then 1 else 2")))
+              (check-exn exn:fail? (lambda () (parser "let x = 1 in x")))
+              (check-exn exn:fail? (lambda () (parser "apply (apply f (3)) (4)")))
+              (check-exn exn:fail? (lambda () (parser "+(1, 2"))))))
+
+(define grupo-evaluacion
+  (test-suite
+   "Grupo: evaluacion y errores"
+   (test-case "aritmetica con flotantes y un solo argumento"
+              (check-equal? (corre "+(1.5, 2)") 3.5)
+              (check-equal? (corre "-(5)") -5)
+              (check-equal? (corre "*(p)") 7))
+   (test-case "let evalua los rands en el ambiente de afuera"
+              (check-equal? (corre "let x = 1 in let x = 2 y = x in y end end") 1))
+   (test-case "un parametro oculta una variable de afuera"
+              (check-equal? (corre "let n = 99 in let f = proc (n) add1(n) end
+                                    in apply f (1) end end") 2))
+   (test-case "un let dentro del letrec oculta el procedimiento"
+              (check-equal? (corre "letrec f (k) = k in let f = 5 in f end end") 5))
+   (test-case "fibonacci con letrec"
+              (check-equal? (corre "letrec fib (k) = if <(k, 2) then k
+                                    else +(apply fib (-(k, 1)), apply fib (-(k, 2))) end
+                                    in apply fib (10) end") 55))
+   (test-case "la traza de la parte 5"
+              (check-equal? (corre "let desplazar = proc (x, d) +(x, d) end
+in
+  letrec
+    acumular (i, total) = if >(i, m)
+                          then total
+                          else apply acumular (add1(i), apply desplazar (total, i))
+                          end
+  in
+    apply acumular (1, q)
+  end
+end") 8))
+   (test-case "errores de las primitivas base"
+              (check-exn exn:fail? (lambda () (corre "/(n, 0)")))
+              (check-exn exn:fail? (lambda () (corre "add1(1, 2)")))
+              (check-exn exn:fail? (lambda () (corre "not(5)")))
+              (check-exn exn:fail? (lambda () (corre ">(true, 1)")))
+              (check-exn exn:fail? (lambda () (corre "+()"))))
+   (test-case "una variable no ligada dentro de un let"
+              (check-exn exn:fail? (lambda () (corre "let x = y in x end"))))
+   (test-case "recursion escrita con let no funciona"
+              (check-exn exn:fail?
+                         (lambda () (corre "let fact = proc (k) if ==(k, 0) then 1
+                                            else *(k, apply fact (sub1(k))) end end
+                                            in apply fact (3) end"))))
+   (test-case "cantidad de argumentos en un procedimiento del letrec"
+              (check-exn exn:fail?
+                         (lambda () (corre "letrec f (a, b) = a in apply f (1) end"))))
+   (test-case "aplicar un booleano"
+              (check-exn exn:fail? (lambda () (corre "apply true ()"))))))
+
 ;; Las suites que agregue el grupo se declaran arriba y se suman aquí.
 
 (define fallidas
   (+ (run-tests base)
      (run-tests primitivas-nuevas)
      (run-tests procedimientos)
-     (run-tests recursion-y-case)))
+     (run-tests recursion-y-case)
+     (run-tests grupo-scanner)
+     (run-tests grupo-parser)
+     (run-tests grupo-evaluacion)))
 
 (eopl:printf "~%==========================================~%")
 (eopl:printf "  pruebas fallidas en total: ~s~%" fallidas)
