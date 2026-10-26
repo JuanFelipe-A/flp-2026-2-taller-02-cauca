@@ -192,4 +192,9 @@
                                       else *(k, apply fact (sub1(k))) end end
                   in apply fact (3) end")
       => error apply-env: la variable fact no esta ligada
+    ; case
+    (interpretar "let dia = 3 in case dia of 1 => 100 of 3 => 300 of 7 => 700 otherwise => 0 end end")  => 300
+    (interpretar "let dia = 5 in case dia of 1 => 100 of 3 => 300 otherwise => 0 end end")              => 0
+    (interpretar "case +(1, 2) of 2 => 20 of 3 => 30 otherwise => 0 end")                              => 30
+    (interpretar "case true of 1 => 1 otherwise => 0 end")                                             => error (control no numérico)
 |#

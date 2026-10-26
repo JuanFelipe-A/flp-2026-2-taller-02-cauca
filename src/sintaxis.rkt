@@ -49,6 +49,7 @@
     (expresion ("apply" expresion "(" (separated-list expresion ",") ")") app-exp)
     (expresion ("letrec" (arbno identificador "(" (separated-list identificador ",") ")" "=" expresion)
                 "in" expresion "end") letrec-exp)
+    (expresion ("case" expresion (arbno "of" numero "=>" expresion) "otherwise" "=>" expresion "end") case-exp)
 
     (primitiva ("+") sum-prim)
     (primitiva ("-") minus-prim)

@@ -46,6 +46,15 @@
         (let ((primero (evaluar-expresion (car rands) env)))
           (cons primero (evaluar-rands (cdr rands) env))))))
 
+;; seleccionar-caso : número x lista de números x lista de expresiones x expresión x ambiente -> valor
+;; Propósito: evalúa la acción de la primera rama cuyo literal coincide con el control;
+;; si ninguna coincide, evalúa la expresión de otherwise.
+(define seleccionar-caso
+  (lambda (control valores acciones default env)
+    (cond ((null? valores) (evaluar-expresion default env))
+          ((= control (car valores)) (evaluar-expresion (car acciones) env))
+          (else (seleccionar-caso control (cdr valores) (cdr acciones) default env)))))
+
 ;; evaluar-expresion : expresion x ambiente -> valor
 ;; Recorre el árbol de sintaxis abstracta con cases y evalúa cada
 ;; variante según la semántica del enunciado. El if liga el resultado de
@@ -79,6 +88,11 @@
               (eopl:error 'app-exp "~s no es un procedimiento" proc))))
       (letrec-exp (proc-names idss bodies letrec-body)
         (evaluar-expresion letrec-body
-                           (ambiente-recursivo proc-names idss bodies env))))))
+                           (ambiente-recursivo proc-names idss bodies env)))
+      (case-exp (exp valores acciones default)
+        (let ((control (evaluar-expresion exp env)))
+          (if (number? control)
+              (seleccionar-caso control valores acciones default env)
+              (eopl:error 'case "el control debe ser numero y llego ~s" control)))))))
 
 (provide (all-defined-out))
