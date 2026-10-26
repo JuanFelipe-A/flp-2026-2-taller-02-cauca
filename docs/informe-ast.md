@@ -29,8 +29,7 @@ La gramática está en `src/sintaxis.rkt`. SLLGEN genera a partir de ella los da
               ::= let-exp({identificador}*, {<expresion>}*, <expresion>)
               ::= proc-exp({identificador}*, <expresion>)
               ::= app-exp(<expresion>, {<expresion>}*)
-              ::= letrec-exp({identificador}*, {{identificador}*}*, {<expresion>}*, <expresion>)
-              ::= case-exp(<expresion>, {numero}*, {<expresion>}*, <expresion>)
+              ::= letrec-exp({identificador}*, {identificador}*, {<expresion>}*, <expresion>)              ::= case-exp(<expresion>, {numero}*, {<expresion>}*, <expresion>)
 
 <primitiva>  ::= sum-prim | minus-prim | mult-prim | div-prim
               |  add-prim | sub-prim

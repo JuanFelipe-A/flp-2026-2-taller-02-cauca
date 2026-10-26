@@ -1,12 +1,5 @@
 # Informe de corrección — Taller 2: El intérprete de Cauca
 
-> **Plantilla de entrega.** Copie este archivo a
-> `docs/informe-correccion.md` dentro del repositorio del grupo y
-> reemplace los marcadores `{{...}}` con su contenido.
-> **No elimine las secciones obligatorias.** No se aceptan PDF, DOCX
-> ni imágenes insertadas: todo el documento debe ser Markdown, las
-> fórmulas en LaTeX (`$...$` / `$$...$$`) y los diagramas en Mermaid.
-
 **Curso:** Fundamentos de Interpretación y Compilación de Lenguajes
 de Programación — Universidad del Valle, Sede Tuluá.
 
@@ -425,20 +418,73 @@ los demás del mismo `letrec`.
 
 **Especificación.**
 
-- **Tipo:** `{{...}}`
-- **Pre-condición:** $\{{\ldots}\}$.
-- **Post-condición:** $\{{\ldots}\}$.
+- **Tipo:** `case-exp` se resuelve en `evaluar-expresion` y delega en el auxiliar `seleccionar-caso : número x lista de números x lista de expresiones x expresión x ambiente -> valor`.
+- **Pre-condición:** la expresión de control $e$ es una expresión válida; $vs = (v_1, \ldots, v_k)$ y $as = (a_1, \ldots, a_k)$ tienen la misma longitud $k \geq 0$, porque el parser genera un valor y una acción por cada `of`; $d$ es la expresión de `otherwise`; y $\rho$ es un ambiente.
+- **Post-condición:** sea $c = \text{value-of}(e, \rho)$. Entonces
+
+$$
+\text{Post}(e, \rho, r) \equiv
+\begin{cases}
+\texttt{eopl:error} & \text{si } c \text{ no es un número} \\
+r = \text{value-of}(a_j, \rho), \ \text{con } j = \min\{\, i : v_i = c \,\} & \text{si } c \text{ es número y existe tal } j \\
+r = \text{value-of}(d, \rho) & \text{si } c \text{ es número y ningún } v_i = c
+\end{cases}
+$$
+
+Además, $e$ se evalúa exactamente una vez.
 
 **Código.**
 
 ```racket
-(define ({{nombre-funcion-3}} ...)
-  ...)
+; case-exp dentro de evaluar-expresion
+(case-exp (exp valores acciones default)
+  (let ((control (evaluar-expresion exp env)))
+    (if (number? control)
+        (seleccionar-caso control valores acciones default env)
+        (eopl:error 'case "el control debe ser numero y llego ~s" control))))
+
+; seleccionar-caso : número x lista de números x lista de expresiones x expresión x ambiente -> valor
+(define seleccionar-caso
+  (lambda (control valores acciones default env)
+    (cond ((null? valores) (evaluar-expresion default env))
+          ((= control (car valores)) (evaluar-expresion (car acciones) env))
+          (else (seleccionar-caso control (cdr valores) (cdr acciones) default env)))))
 ```
 
-**Demostración.** {{Inducción estructural sobre la lista de ramas,
-evaluación única de la expresión de control y terminación del
-recorrido.}}
+**Estrategia de demostración:** inducción estructural sobre la lista de ramas $vs$ para `seleccionar-caso`, y un argumento directo sobre la cláusula `case-exp` para la evaluación única y el error.
+
+**Demostración.**
+
+**(1) Lema: selección de la rama, por inducción sobre $k$.** Sea $S(k)$: para toda lista de $k$ ramas, todo número $c$ y todo ambiente $\rho$, `(seleccionar-caso c vs as d ρ)` cumple la parte de la post-condición que corresponde a $c$ número.
+
+- **Caso base, $k = 0$.** $vs = ()$, así que no hay ramas. La función llama a `(evaluar-expresion d ρ)`, que es el valor de `otherwise`, como pide la post-condición.
+- **Caso inductivo, $k > 0$.** Sea $vs = (v_1 \,.\, resto_v)$ y $as = (a_1 \,.\, resto_a)$. Hay dos subcasos según la prueba `=`:
+  - Si $c = v_1$, la función evalúa $a_1$ y devuelve $\text{value-of}(a_1, \rho)$. Como $v_1$ es el primer elemento, $j = 1$ es el mínimo, y la post-condición se cumple.
+  - Si $c \neq v_1$, la función llama a `seleccionar-caso` con las colas $resto_v$, $resto_a$, el mismo $c$, $d$ y $\rho$. La longitud de las colas es $k - 1$, así que por hipótesis de inducción devuelve la rama del primer índice $i \geq 2$ con $v_i = c$, o $\text{value-of}(d, \rho)$ si no existe. Como $v_1 \neq c$, ese índice es también el mínimo de la lista completa, y la post-condición se cumple.
+
+Con esto, para toda lista de ramas y todo $c$ numérico, la función devuelve la acción de la primera coincidencia, o la de `otherwise` si no hay coincidencia.
+
+**(2) Evaluación única de la expresión de control.** La expresión $e$ aparece en la cláusula `case-exp` en una sola llamada, `(evaluar-expresion exp env)`, que liga el resultado a `control`. Después, `seleccionar-caso` recibe el valor $c$ y no la expresión $e$: su cuerpo no contiene `exp`, y sus llamadas a `evaluar-expresion` son solo sobre $a_i$ o $d$. Por tanto, las llamadas recursivas de la sección (1) nunca vuelven a evaluar $e$, sin importar cuántas ramas tenga. La cuenta de evaluaciones de $e$ es 1 para todo $k \geq 0$.
+
+Conviene aclarar que el lenguaje no tiene efectos secundarios, así que la unicidad no se ve en el resultado de un programa; se demuestra por la forma del código, que es la propiedad que pide el enunciado.
+
+**(3) Error cuando el control no es numérico.** La condición `(number? control)` se evalúa antes de tocar ninguna rama. Si $c$ no es número, se ejecuta `eopl:error` y ninguna $a_i$ ni $d$ se evalúa. Esto cubre el caso del `if`-like `case true of ...`, que es el caso de error de las pruebas.
+
+Nota sobre el error: si la evaluación de $e$ misma falla (por ejemplo, una variable no ligada), el error viene de esa evaluación y no de `case`. La post-condición se refiere al caso en que $e$ termina con un valor que no es número.
+
+**(4) Terminación.** Hay dos recorridos:
+
+- `seleccionar-caso` usa como medida $\mu(vs) = \text{longitud}(vs)$. En cada llamada recursiva la lista es `(cdr valores)`, así que $\mu$ decrece en 1. Como $\mu \geq 0$, después de como máximo $k$ llamadas se llega a `(null? valores)`, que es el caso base.
+- `evaluar-expresion` sobre $e$, $a_i$ o $d$ termina porque cada uno es un subárbol estrictamente más pequeño del nodo `case-exp`, y el AST es finito. El recorrido sobre las ramas no vuelve a entrar en el mismo nodo.
+
+**Ejemplos que cubren la especificación** (en `pruebas-cauca.rkt`, sección de Parte 4):
+
+- `let dia = 3 in case dia of 1 => 100 of 3 => 300 of 7 => 700 otherwise => 0 end end` da 300: la primera coincidencia es la rama `of 3`.
+- `let dia = 5 in case dia of 1 => 100 of 3 => 300 otherwise => 0 end end` da 0: ninguna rama coincide y se evalúa `otherwise`.
+- `case +(1, 2) of 2 => 20 of 3 => 30 otherwise => 0 end` da 30: el control se calcula una vez y vale 3.
+- `case true of 1 => 1 otherwise => 0 end` levanta error: el control no es número.
+
+**Conclusión:** `case-exp` cumple la especificación. Selecciona la acción de la primera rama cuyo literal coincide con el control, evalúa `otherwise` cuando ninguna coincide, evalúa el control una sola vez, levanta error cuando el control no es numérico, y el recorrido sobre las ramas termina porque su longitud decrece en cada paso.
 
 ---
 
